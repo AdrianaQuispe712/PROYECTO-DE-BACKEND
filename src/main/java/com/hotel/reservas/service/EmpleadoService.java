@@ -1,14 +1,16 @@
 package com.hotel.reservas.service;
 
-import com.hotel.reservas.model.Empleado;
+
+
+import com.hotel.reservas.dto.EmpleadoDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface EmpleadoService {
-    List<Empleado> findAll();
-    Optional<Empleado> findById(Long id);
-    Empleado save(Empleado empleado);
-    void deleteById(Long id);
-    boolean existsById(Long id);
+    EmpleadoDTO crearEmpleado(EmpleadoDTO dto);
+    EmpleadoDTO actualizarEmpleado(Long id, EmpleadoDTO dto);
+    void eliminarEmpleado(Long id);
+    List<EmpleadoDTO> listarEmpleados();
+    EmpleadoDTO obtenerEmpleadoPorId(Long id);
 }
+

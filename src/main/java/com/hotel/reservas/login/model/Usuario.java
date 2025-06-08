@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.hotel.reservas.model.Cliente;
+
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -34,6 +36,7 @@ public class Usuario {
     
     private boolean activo = true;
     
+    
     @ManyToMany(fetch = FetchType.EAGER) // Carga los roles de forma anticipada (EAGER) para evitar problemas de LazyInitializationException
     @JoinTable(
         name = "usuario_roles", // Nombre de la tabla intermedia
@@ -41,4 +44,10 @@ public class Usuario {
         inverseJoinColumns = @JoinColumn(name = "rol_id") // Columna que referencia al rol
     )
     private Set<Rol> roles = new HashSet<>();
+
+
+    public Cliente getCliente() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getCliente'");
+    }
 }

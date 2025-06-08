@@ -5,13 +5,19 @@ import com.hotel.reservas.service.ClienteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import com.hotel.reservas.login.model.Usuario;
 import com.hotel.reservas.login.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/clientes")
@@ -24,85 +30,193 @@ public class ClienteController {
     private UsuarioRepository usuarioRepository;
 
     @GetMapping
-    public List<Cliente> getAllClientes() {
-        return clienteService.findAll();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAllClientes() {
+        try {
+            List<Cliente> clientes = clienteService.findAll();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Lista de clientes obtenida correctamente");
+            response.put("data", clientes);
+            response.put("total", clientes.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return errorResponse("Error al obtener la lista de clientes: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Cliente> getClienteById(@PathVariable Long id) {
-        return clienteService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getClienteById(@PathVariable Long id) {
+        try {
+            Optional<Cliente> cliente = clienteService.findById(id);
+            if (cliente.isPresent()) {
+                return successResponse("Cliente encontrado", cliente.get());
+            } else {
+                return notFoundResponse("Cliente no encontrado con ID: " + id);
+            }
+        } catch (Exception e) {
+            return errorResponse("Error al buscar cliente: " + e.getMessage());
+        }
     }
 
     @PostMapping
-    public Cliente createCliente(@Valid @RequestBody Cliente cliente) {
-        return clienteService.save(cliente);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> createCliente(@Valid @RequestBody Cliente cliente) {
+        try {
+            if (clienteService.existsByEmail(cliente.getEmail())) {
+                return conflictResponse("Ya existe un cliente con este email");
+            }
+
+            Cliente nuevoCliente = clienteService.save(cliente);
+            return createdResponse("Cliente creado exitosamente", nuevoCliente);
+        } catch (Exception e) {
+            return errorResponse("Error al crear cliente: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Cliente> updateCliente(@PathVariable Long id, @Valid @RequestBody Cliente clienteDetails) {
-        return clienteService.findById(id)
-                .map(cliente -> {
-                    cliente.setNombre(clienteDetails.getNombre());
-                    cliente.setEmail(clienteDetails.getEmail());
-                    cliente.setTelefono(clienteDetails.getTelefono());
-                    Cliente updated = clienteService.save(cliente);
-                    return ResponseEntity.ok(updated);
-                }).orElse(ResponseEntity.notFound().build());
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateCliente(@PathVariable Long id, @Valid @RequestBody Cliente clienteDetails) {
+        try {
+            Optional<Cliente> clienteOpt = clienteService.findById(id);
+            if (clienteOpt.isEmpty()) {
+                return notFoundResponse("Cliente no encontrado con ID: " + id);
+            }
+
+            Cliente cliente = clienteOpt.get();
+
+            if (!cliente.getEmail().equals(clienteDetails.getEmail()) &&
+                clienteService.existsByEmail(clienteDetails.getEmail())) {
+                return conflictResponse("Ya existe otro cliente con este email");
+            }
+
+            cliente.setNombre(clienteDetails.getNombre());
+            cliente.setEmail(clienteDetails.getEmail());
+            cliente.setTelefono(clienteDetails.getTelefono());
+
+            Cliente clienteActualizado = clienteService.save(cliente);
+            return successResponse("Cliente actualizado exitosamente", clienteActualizado);
+        } catch (Exception e) {
+            return errorResponse("Error al actualizar cliente: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCliente(@PathVariable Long id) {
-        if (clienteService.existsById(id)) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> deleteCliente(@PathVariable Long id) {
+        try {
+            if (!clienteService.existsById(id)) {
+                return notFoundResponse("Cliente no encontrado con ID: " + id);
+            }
+
+            if (clienteService.tieneReservasActivas(id)) {
+                return conflictResponse("No se puede eliminar el cliente porque tiene reservas activas");
+            }
+
             clienteService.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
+            return successResponse("Cliente eliminado exitosamente", null);
+        } catch (Exception e) {
+            return errorResponse("Error al eliminar cliente: " + e.getMessage());
         }
     }
 
     @GetMapping("/mi-perfil")
-    public ResponseEntity<Cliente> getMiPerfil() {
-        // Obtener el usuario autenticado
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            // No hay usuario autenticado
-            return ResponseEntity.status(401).build();
-        }
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<Map<String, Object>> getMiPerfil() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
 
-        String username = authentication.getName();
-        System.out.println("Buscando perfil para usuario: " + username);
-
-        // Buscar el usuario en la base de datos
-        Optional<com.hotel.reservas.login.model.Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
-
-        if (usuarioOpt.isEmpty()) {
-            System.out.println("No se encontró usuario con username: " + username);
-            return ResponseEntity.notFound().build();
-        }
-
-        com.hotel.reservas.login.model.Usuario usuario = usuarioOpt.get();
-        System.out.println("Usuario encontrado: " + usuario.getId() + " - " + usuario.getUsername());
-
-        // Buscar el cliente asociado al usuario
-        Optional<Cliente> clienteOpt = clienteService.findByUsuarioId(usuario.getId());
-
-        if (clienteOpt.isPresent()) {
-            Cliente cliente = clienteOpt.get();
-            System.out.println("Cliente encontrado: ID=" + cliente.getId() + ", Nombre=" + cliente.getNombre());
-            return ResponseEntity.ok(cliente);
-        } else {
-            System.out.println("NO SE ENCONTRÓ CLIENTE para usuario ID: " + usuario.getId());
-
-            // Depuración: listar todos los clientes y sus usuarios asociados
-            List<Cliente> todosClientes = clienteService.findAll();
-            System.out.println("Total de clientes en sistema: " + todosClientes.size());
-            for (Cliente c : todosClientes) {
-                System.out.println("Cliente ID: " + c.getId() + ", Usuario ID: " +
-                        (c.getUsuario() != null ? c.getUsuario().getId() : "NULL"));
+            if (usuarioOpt.isEmpty()) {
+                return notFoundResponse("Usuario no encontrado");
             }
-            return ResponseEntity.notFound().build();
+
+            Cliente cliente = usuarioOpt.get().getCliente();
+            if (cliente == null) {
+                return notFoundResponse("No se encontró perfil de cliente asociado");
+            }
+
+            return successResponse("Perfil obtenido correctamente", cliente);
+        } catch (Exception e) {
+            return errorResponse("Error al obtener perfil: " + e.getMessage());
         }
+    }
+
+    @PutMapping("/mi-perfil/actualizar")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<Map<String, Object>> actualizarMiPerfil(@Valid @RequestBody Cliente clienteDetails) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+
+            if (usuarioOpt.isEmpty()) {
+                return notFoundResponse("Usuario no encontrado");
+            }
+
+            Usuario usuario = usuarioOpt.get();
+            Cliente cliente = usuario.getCliente();
+
+            if (cliente == null) {
+                return notFoundResponse("Perfil de cliente no encontrado");
+            }
+
+            if (!cliente.getEmail().equals(clienteDetails.getEmail()) &&
+                clienteService.existsByEmail(clienteDetails.getEmail())) {
+                return conflictResponse("Ya existe otro cliente con este email");
+            }
+
+            cliente.setNombre(clienteDetails.getNombre());
+            cliente.setTelefono(clienteDetails.getTelefono());
+            cliente.setEmail(clienteDetails.getEmail());
+
+            Cliente clienteActualizado = clienteService.save(cliente);
+            return successResponse("Perfil actualizado exitosamente", clienteActualizado);
+        } catch (Exception e) {
+            return errorResponse("Error al actualizar perfil: " + e.getMessage());
+        }
+    }
+
+    // MÉTODOS DE RESPUESTA UNIFICADOS
+
+    private ResponseEntity<Map<String, Object>> successResponse(String message, Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", message);
+        if (data != null) {
+            response.put("data", data);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> createdResponse(String message, Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", message);
+        response.put("data", data);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> notFoundResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> conflictResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> errorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

@@ -12,64 +12,35 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-// import org.springframework.stereotype.Component;
-
-// import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
-// import org.springframework.stereotype.Component;
 import com.hotel.reservas.login.security.JwtAuthenticationEntryPoint;
 import com.hotel.reservas.login.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-// @EnableJdbcHttpSession    // no se para que sirve
-/** 
- * Esta clase configura la seguridad de la aplicación utilizando Spring Security.
- * Se encarga de definir las reglas de autorización y autenticación para los endpoints de la API.
- */
 public class SecurityConfig {
-    /**
-     * Este bean se encarga de manejar las excepciones de autenticación no autorizada.
-     * Se utiliza para devolver una respuesta adecuada cuando un usuario no autenticado intenta acceder a un recurso protegido.
-     */
+    
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
 
     public SecurityConfig(JwtAuthenticationEntryPoint unauthorizedHandler) {
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
-    /**
-     * Este bean se encarga de gestionar la autenticación de los usuarios.
-     * Se utiliza para autenticar las credenciales de los usuarios al iniciar sesión.
-     */        
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    /**
-     * Este bean se encarga de codificar las contraseñas de los usuarios.
-     * Se utiliza para almacenar las contraseñas de forma segura en la base de datos.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-
-    /**
-     * Este bean se encarga de gestionar la autenticación mediante JWT (JSON Web Token).
-     * Se utiliza para validar y procesar los tokens JWT en las solicitudes de los usuarios.
-     */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
     }
 
-    /**
-     * Este bean se encarga de configurar la cadena de filtros de seguridad de Spring Security.
-     * Se utiliza para definir las reglas de autorización y autenticación para los endpoints de la API.
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -78,16 +49,36 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/public/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                // PÚBLICAS - Sin autenticación
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**","/swagger-resources/**", "/swagger-ui/index.html").permitAll()
+                .requestMatchers("/api/auth/**").permitAll() // Login y registro
+                .requestMatchers("/api/public/**").permitAll() // Endpoints públicos
+                .requestMatchers("/api/habitaciones/disponibles/**").permitAll() // Ver habitaciones disponibles
+                
+                // SOLO ADMIN - Dueño del hotel
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/clientes/mi-perfil").hasAnyRole("ADMIN", "CLIENTE")
-                .requestMatchers("/api/clientes/**").hasAnyRole("ADMIN", "CLIENTE")
+                .requestMatchers("/api/clientes").hasRole("ADMIN") // Solo admin ve todos los clientes
+                .requestMatchers("/api/clientes/{id}").hasRole("ADMIN") // Solo admin ve cliente específico
+                .requestMatchers("/api/empleados/**").hasRole("ADMIN") // Solo admin maneja empleados
+                .requestMatchers("/api/habitaciones/admin/**").hasRole("ADMIN") // Gestión de habitaciones
+                
+                // CLIENTE AUTENTICADO - Sus propios datos
+                .requestMatchers("/api/clientes/mi-perfil").hasRole("CLIENTE")
+                .requestMatchers("/api/clientes/mi-perfil/actualizar").hasRole("CLIENTE")
+                .requestMatchers("/api/reservas/mis-reservas").hasRole("CLIENTE")
+                .requestMatchers("/api/reservas/crear").hasRole("CLIENTE")
+                .requestMatchers("/api/reservas/cancelar/**").hasRole("CLIENTE")
+                
+                // ADMIN Y CLIENTE - Según contexto
+                .requestMatchers("/api/reservas/**").hasAnyRole("ADMIN", "CLIENTE")
+                .requestMatchers("/api/pagos/**").hasAnyRole("ADMIN", "CLIENTE")
+                .requestMatchers("/api/facturas/**").hasAnyRole("ADMIN", "CLIENTE")
+                
+                // TODO LO DEMÁS REQUIERE AUTENTICACIÓN
                 .anyRequest().authenticated()
             );
 
-        // Usar el bean jwtAuthenticationFilter directamente
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

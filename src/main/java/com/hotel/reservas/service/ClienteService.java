@@ -12,4 +12,6 @@ public interface ClienteService {
     void deleteById(Long id);
     boolean existsById(Long id);
     Optional<Cliente> findByUsuarioId(Long usuarioId);
+    boolean existsByEmail(String email);
+    boolean tieneReservasActivas(Long id);
 }

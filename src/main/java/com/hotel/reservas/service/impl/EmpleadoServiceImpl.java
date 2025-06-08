@@ -1,42 +1,71 @@
 package com.hotel.reservas.service.impl;
 
+import com.hotel.reservas.dto.EmpleadoDTO;
 import com.hotel.reservas.model.Empleado;
 import com.hotel.reservas.repository.EmpleadoRepository;
 import com.hotel.reservas.service.EmpleadoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class EmpleadoServiceImpl implements EmpleadoService {
 
-    @Autowired
-    private EmpleadoRepository empleadoRepository;
+    private final EmpleadoRepository empleadoRepository;
 
     @Override
-    public List<Empleado> findAll() {
-        return empleadoRepository.findAll();
+    public EmpleadoDTO crearEmpleado(EmpleadoDTO dto) {
+        Empleado empleado = Empleado.builder()
+                .nombre(dto.getNombre())
+                .apellido(dto.getApellido())
+                .ci(dto.getCi())
+                .puesto(dto.getPuesto())
+                .build();
+        Empleado guardado = empleadoRepository.save(empleado);
+        return mapToDTO(guardado);
     }
 
     @Override
-    public Optional<Empleado> findById(Long id) {
-        return empleadoRepository.findById(id);
+    public EmpleadoDTO actualizarEmpleado(Long id, EmpleadoDTO dto) {
+        Empleado empleado = empleadoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+        empleado.setNombre(dto.getNombre());
+        empleado.setApellido(dto.getApellido());
+        empleado.setCi(dto.getCi());
+        empleado.setPuesto(dto.getPuesto());
+        return mapToDTO(empleadoRepository.save(empleado));
     }
 
     @Override
-    public Empleado save(Empleado empleado) {
-        return empleadoRepository.save(empleado);
-    }
-
-    @Override
-    public void deleteById(Long id) {
+    public void eliminarEmpleado(Long id) {
         empleadoRepository.deleteById(id);
     }
 
     @Override
-    public boolean existsById(Long id) {
-        return empleadoRepository.existsById(id);
+    public List<EmpleadoDTO> listarEmpleados() {
+        return empleadoRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public EmpleadoDTO obtenerEmpleadoPorId(Long id) {
+        Empleado empleado = empleadoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+        return mapToDTO(empleado);
+    }
+
+    private EmpleadoDTO mapToDTO(Empleado empleado) {
+        return EmpleadoDTO.builder()
+                .id(empleado.getId())
+                .nombre(empleado.getNombre())
+                .apellido(empleado.getApellido())
+                .ci(empleado.getCi())
+                .puesto(empleado.getPuesto())
+                .build();
     }
 }

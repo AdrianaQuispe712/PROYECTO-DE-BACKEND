@@ -6,6 +6,7 @@ import com.hotel.reservas.service.HabitacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,5 +39,41 @@ public class HabitacionServiceImpl implements HabitacionService {
     @Override
     public boolean existsById(Long id) {
         return habitacionRepository.existsById(id);
+    }
+
+    @Override
+    public boolean esEstadoValido(String estado) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'esEstadoValido'");
+    }
+
+    @Override
+    public boolean tieneReservasActivas(Long id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'tieneReservasActivas'");
+    }
+
+    @Override
+    public boolean esTipoValido(String tipo) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'esTipoValido'");
+    }
+
+    @Override
+    public boolean existsByNumero(String numero) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'existsByNumero'");
+    }
+
+    @Override
+    public List<Habitacion> findByTipo(String upperCase) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findByTipo'");
+    }
+
+    @Override
+    public List<Habitacion> findHabitacionesDisponibles(LocalDate fechaInicio, LocalDate fechaFin, Integer personas) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findHabitacionesDisponibles'");
     }
 }

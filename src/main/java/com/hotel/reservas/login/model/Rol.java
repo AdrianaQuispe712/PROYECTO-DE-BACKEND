@@ -24,6 +24,7 @@ public class Rol {
     public enum NombreRol { // Enum para definir los nombres de los roles
         ROL_CLIENTE,
         ROL_ADMIN,
-        ROL_EMPLEADO
+        //
+        //
     }
 }

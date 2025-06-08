@@ -43,7 +43,14 @@ public class Reserva implements Serializable {
     @JoinColumn(name = "habitacion_id")
     private Habitacion habitacion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empleado_id")
-    private Empleado empleado;
+
+     // 👇 AÑADIR ESTOS DOS CAMPOS
+    @Column(name = "estado_reserva", length = 20, nullable = false)
+    private String estadoReserva = "PENDIENTE"; // por defecto
+
+    @Min(1)
+    @Column(name = "numero_personas", nullable = false)
+    private int numeroPersonas;
+
+
 }

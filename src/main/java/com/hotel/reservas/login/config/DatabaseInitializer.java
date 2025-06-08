@@ -57,9 +57,6 @@ public class DatabaseInitializer implements CommandLineRunner {
         rolCliente.setNombre(NombreRol.ROL_CLIENTE);
         rolRepository.save(rolCliente);
 
-        Rol rolEmpleado = new Rol();
-        rolEmpleado.setNombre(NombreRol.ROL_EMPLEADO);
-        rolRepository.save(rolEmpleado);
 
         System.out.println("Roles inicializados en la base de datos");
     }
@@ -69,11 +66,11 @@ public class DatabaseInitializer implements CommandLineRunner {
     // Método para crear un usuario administrador por defecto si no existe
     // Este usuario tendrá el username "admin", password "admin123" y el rol de administrador
     private void crearAdminPorDefecto() {
-        if (!usuarioRepository.existsByUsername("admin2")) {
+        if (!usuarioRepository.existsByUsername("admin4")) {
             Usuario admin = new Usuario();
-            admin.setUsername("admin2");
+            admin.setUsername("admin4");
             admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setEmail("admin2@hotel.com");
+            admin.setEmail("admin4@hotel.com");
             admin.setNombre("Administrador");
             admin.setApellido("Sistema");
             admin.setActivo(true);

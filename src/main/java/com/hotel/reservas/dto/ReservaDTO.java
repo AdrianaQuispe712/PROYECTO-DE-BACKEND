@@ -9,18 +9,16 @@ public class ReservaDTO {
     private LocalDate fechaFin;
     private Long clienteId;
     private Long habitacionId;
-    private Long empleadoId;
 
     public ReservaDTO() {
     }
 
-    public ReservaDTO(Long id, LocalDate fechaInicio, LocalDate fechaFin, Long clienteId, Long habitacionId, Long empleadoId) {
+    public ReservaDTO(Long id, LocalDate fechaInicio, LocalDate fechaFin, Long clienteId, Long habitacionId) {
         this.id = id;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
         this.clienteId = clienteId;
         this.habitacionId = habitacionId;
-        this.empleadoId = empleadoId;
     }
 
     public Long getId() {
@@ -52,11 +50,5 @@ public class ReservaDTO {
     }
     public void setHabitacionId(Long habitacionId) {
         this.habitacionId = habitacionId;
-    }
-    public Long getEmpleadoId() {
-        return empleadoId;
-    }
-    public void setEmpleadoId(Long empleadoId) {
-        this.empleadoId = empleadoId;
     }
 }

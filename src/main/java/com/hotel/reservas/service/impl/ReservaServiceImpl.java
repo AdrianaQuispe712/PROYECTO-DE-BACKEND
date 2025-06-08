@@ -3,11 +3,9 @@ package com.hotel.reservas.service.impl;
 import com.hotel.reservas.dto.ReservaDTO;
 import com.hotel.reservas.model.Cliente;
 import com.hotel.reservas.model.Habitacion;
-import com.hotel.reservas.model.Empleado;
 import com.hotel.reservas.model.Reserva;
 import com.hotel.reservas.repository.ClienteRepository;
 import com.hotel.reservas.repository.HabitacionRepository;
-import com.hotel.reservas.repository.EmpleadoRepository;
 import com.hotel.reservas.repository.ReservaRepository;
 import com.hotel.reservas.service.ReservaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +26,6 @@ public class ReservaServiceImpl implements ReservaService {
     @Autowired
     private HabitacionRepository habitacionRepository;
 
-    @Autowired
-    private EmpleadoRepository empleadoRepository;
 
     @Override
     public List<Reserva> findAll() {
@@ -47,15 +43,12 @@ public class ReservaServiceImpl implements ReservaService {
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + dto.getClienteId()));
         Habitacion habitacion = habitacionRepository.findById(dto.getHabitacionId())
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada con id: " + dto.getHabitacionId()));
-        Empleado empleado = empleadoRepository.findById(dto.getEmpleadoId())
-                .orElseThrow(() -> new RuntimeException("Empleado no encontrado con id: " + dto.getEmpleadoId()));
 
         Reserva reserva = new Reserva();
         reserva.setFechaInicio(dto.getFechaInicio());
         reserva.setFechaFin(dto.getFechaFin());
         reserva.setCliente(cliente);
         reserva.setHabitacion(habitacion);
-        reserva.setEmpleado(empleado);
 
         return reservaRepository.save(reserva);
     }
@@ -67,14 +60,11 @@ public class ReservaServiceImpl implements ReservaService {
                     .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + dto.getClienteId()));
             Habitacion habitacion = habitacionRepository.findById(dto.getHabitacionId())
                     .orElseThrow(() -> new RuntimeException("Habitación no encontrada con id: " + dto.getHabitacionId()));
-            Empleado empleado = empleadoRepository.findById(dto.getEmpleadoId())
-                    .orElseThrow(() -> new RuntimeException("Empleado no encontrado con id: " + dto.getEmpleadoId()));
-
+    
             reserva.setFechaInicio(dto.getFechaInicio());
             reserva.setFechaFin(dto.getFechaFin());
             reserva.setCliente(cliente);
             reserva.setHabitacion(habitacion);
-            reserva.setEmpleado(empleado);
 
             return reservaRepository.save(reserva);
         });
@@ -89,4 +79,22 @@ public class ReservaServiceImpl implements ReservaService {
     public void deleteById(Long id) {
         reservaRepository.deleteById(id);
     }
+
+   @Override
+    public List<Reserva> findByClienteId(Long id) {
+    return reservaRepository.findByClienteId(id);
+    }
+
+
+   @Override
+public Reserva save(Reserva reserva) {
+    return reservaRepository.save(reserva);
+}
+
+   @Override
+   public boolean isReservaOwner(Long idReserva, String username) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'isReservaOwner'");
+   }
+
 }

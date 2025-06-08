@@ -49,4 +49,8 @@ public class Habitacion implements Serializable {
 
     @Version
     private Integer version;
+    
+    @Builder.Default
+@Column(nullable = false)
+private Boolean disponible = true;
 }

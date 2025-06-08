@@ -51,4 +51,16 @@ public class ClienteServiceImpl implements ClienteService {
         }
         return cliente;
     }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'existsByEmail'");
+    }
+
+    @Override
+    public boolean tieneReservasActivas(Long id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'tieneReservasActivas'");
+    }
 }
